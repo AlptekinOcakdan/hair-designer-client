@@ -4,6 +4,7 @@ import {
     getMyProcedures, getMySalons,
     getSalonStaffProcedures,
     getStaffAppointments,
+    getStaffAvailability, // YENİ IMPORT
     getUserById,
     getUsers,
     getUsersByOrganisation
@@ -20,7 +21,12 @@ export const userKeys = {
     detail: (id: string) => [...userKeys.details(), id] as const,
     staffProcedures: (salonId: string) => [...userKeys.all, 'staff-procedures', salonId] as const,
     staffAppointments: (date?: string) => [...userKeys.all, 'staff-appointments', date ?? 'all'] as const,
-    mySalons: () => [...userKeys.all, 'my-salons'] as const, // YENİ
+
+    // YENİ: Staff Availability için key
+    staffAvailability: (salonId: string, staffId: string, startDate: string, endDate: string) =>
+        [...userKeys.all, 'availability', salonId, staffId, startDate, endDate] as const,
+
+    mySalons: () => [...userKeys.all, 'my-salons'] as const,
     myProcedures: () => [...userKeys.all, 'my-procedures'] as const,
     globalProcedures: () => ['procedures', 'list'] as const,
 
@@ -55,11 +61,18 @@ export const userQueries = {
         queryKey: userKeys.staffAppointments(date),
         queryFn: () => getStaffAppointments(date),
     }),
-    listMySalons: () => queryOptions({ // YENİ
+
+    // YENİ: Staff Availability Query Option
+    listStaffAvailability: (salonId: string, staffId: string, startDate: string, endDate: string) => queryOptions({
+        queryKey: userKeys.staffAvailability(salonId, staffId, startDate, endDate),
+        queryFn: () => getStaffAvailability(salonId, staffId, startDate, endDate),
+        enabled: !!salonId && !!staffId && !!startDate && !!endDate,
+    }),
+
+    listMySalons: () => queryOptions({
         queryKey: userKeys.mySalons(),
         queryFn: getMySalons,
     }),
-    // YENİ QUERIES
     listMyProcedures: () => queryOptions({
         queryKey: userKeys.myProcedures(),
         queryFn: getMyProcedures,

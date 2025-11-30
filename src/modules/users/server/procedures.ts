@@ -33,7 +33,7 @@ export type AppointmentResponse = {
     staffId: string;
     procedureIds: string[];
     appointmentDate: string;
-    isCompleted: boolean; // Yazım hatası düzeltildi: isComleted -> isCompleted
+    isCompleted: boolean;
     isCanceled: boolean;
     cancellationReason: string | null;
     client: ClientInfo | null;
@@ -161,6 +161,7 @@ type BookAppointmentRequest = {
     staffId: string;
     procedureIds: string[];
     appointmentDate: string;
+    salonId?: string; // YENİ: Opsiyonel salonId eklendi
 };
 
 type RequestCancelRequest = {
@@ -190,6 +191,19 @@ export type StaffProcedureDetail = {
 type UpdateStaffProcedureRequest = {
     durationMinutes: number;
     price: string;
+};
+
+// YENİ TİPLER: Staff Availability
+export type StaffAvailabilitySlot = {
+    start: string;
+    end: string;
+};
+
+export type StaffAvailabilityResponseItem = {
+    date: string;
+    isAvailable: boolean;
+    reason?: string;
+    slots: StaffAvailabilitySlot[];
 };
 
 export async function createUser(payload: CreateUserRequest): Promise<User> {
@@ -363,6 +377,31 @@ export async function getSalonStaffProcedures(salonId: string): Promise<StaffPro
     });
     const data = await parseJsonSafe(res);
     if (res.ok) return data as StaffProceduresResponseItem[];
+    throw createApiError(res.status, data);
+}
+
+/**
+ * YENİ: Get staff availability slots for a date range
+ */
+export async function getStaffAvailability(
+    salonId: string,
+    staffId: string,
+    startDate: string,
+    endDate: string
+): Promise<StaffAvailabilityResponseItem[]> {
+    const searchParams = new URLSearchParams({
+        startDate,
+        endDate
+    });
+
+    const endpoint = `/users/salon/${encodeURIComponent(salonId)}/staff/${encodeURIComponent(staffId)}/availability?${searchParams.toString()}`;
+
+    const res = await fetchWithAuth(endpoint, {
+        method: 'GET',
+    });
+
+    const data = await parseJsonSafe(res);
+    if (res.ok) return data as StaffAvailabilityResponseItem[];
     throw createApiError(res.status, data);
 }
 
